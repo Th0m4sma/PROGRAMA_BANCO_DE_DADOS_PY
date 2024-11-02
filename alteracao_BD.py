@@ -51,7 +51,10 @@ def verifica_cliente(lista:list,email:str,senha:str) -> bool:
 
 
 def removendo_BancoDados(email: str, senha: str) -> bool:
+    conexao = None
+    cursor = None
     try:
+        # Conecta ao banco de dados
         conexao = pymysql.connect(
             host='localhost',
             user='root',
@@ -61,19 +64,26 @@ def removendo_BancoDados(email: str, senha: str) -> bool:
         
         lista = procurar_BancoDados(email)
 
-        if not verifica_cliente(email,senha):
+        # Verifica se o cliente existe e se a senha está correta
+        if not lista or not verifica_cliente(email, senha):
             return False
         
         cursor = conexao.cursor()
-        cursor.execute('DELETE FROM cliente WHERE id = %s', (lista[0]))  
+        cursor.execute('DELETE FROM cliente WHERE id = %s', (lista[0],))  # Corrige a tupla para (lista[0],)
         
-        conexao.commit()  
+        conexao.commit()  # Confirma a transação
+        return True  # Retorna True após a remoção bem-sucedida
+
     except Exception as e:
         print("Erro ao remover dados:", e)
+        return False  # Retorna False em caso de erro
+
     finally:
-        cursor.close()  
-        conexao.close()  
-    return True
+        # Fecha o cursor e a conexão se foram criados
+        if cursor:
+            cursor.close()  
+        if conexao:
+            conexao.close()  
 
 def alterar_senha_BancoDados(email: str, senha_antiga: str, senha_nova: str) -> bool:
     try:

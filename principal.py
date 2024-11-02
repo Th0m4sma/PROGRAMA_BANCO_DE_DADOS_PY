@@ -1,5 +1,6 @@
 from alteracao_BD import *
 from prints import *
+import time
 import os
 
 
@@ -25,6 +26,9 @@ def main():
             imprimir_BD()
             input("")
         elif op == 5:
+            os.system('cls')
+            print_saindo()
+            time.sleep(2)
             os.system('cls')
             break
 
