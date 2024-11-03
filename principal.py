@@ -68,17 +68,28 @@ def main_alterar():
         op = int(input("Digite: "))
 
         if op == 1:
-            pass
+            os.system('cls')
+            email = input("Email: ")
+            senha_antiga = input("Senha Atual: ")
+            senha_nova = input("Senha Nova: ")
+            alterar_senha_BancoDados(email,senha_antiga,senha_nova)
         elif op == 2:
-            pass
+            os.system('cls')
+            email = input("Email: ")
+            senha = input("Senha: ")
+            novo_nome = input("Novo nome: ")
+            alterar_nome_BancoDados(email,senha,novo_nome)
         elif op == 3:
-            pass
+            os.system('cls')
+            email = input("Email: ")
+            senha = input("Senha: ")
+            nova_pref = input("Nova Preferencia: ")
+            alterar_pref_BancoDados(email,senha,nova_pref)
         elif op == 4:
-            break
-        
-
-
-    
+            os.system('cls')
+            print_saindo()
+            time.sleep(1)
+            break    
 
 main()
 

@@ -27,66 +27,54 @@ def inserindo_BancoDados(nome: str, email: str, senha: str, pref: str) -> bool:
         conexao.close()
     return True
 
-def procurar_BancoDados(email: str) -> list:
-    conexao = pymysql.connect(
+def conectar_banco():
+    return pymysql.connect(
         host='localhost',
         user='root',
         passwd='',
         database='cadastro'
     )
 
+def procurar_BancoDados(email: str) -> list:
+    conexao = conectar_banco()
     cursor = conexao.cursor()
-    cursor.execute(f'select * from cliente where email="{email}"')
-
-    lista = list(cursor.fetchall())
-    cursor.close()
-    conexao.close()
+    try:
+        cursor.execute('SELECT * FROM cliente WHERE email = %s', (email,))
+        lista = list(cursor.fetchone())  
+    except Exception as e:
+        print(f"Erro ao buscar o cliente: {e}")
+        lista = []
+    finally:
+        cursor.close()
+        conexao.close()
     return lista
 
-def verifica_cliente(lista:list,email:str,senha:str) -> bool:
-    if lista[2]!=email or lista[3] != senha:
-        return False
-    else:
-        return True
-
+def verifica_cliente(lista: list, email: str, senha: str) -> bool:
+    return str(lista[2]) == email and str(lista[3]) == senha
 
 def removendo_BancoDados(email: str, senha: str) -> bool:
-    conexao = None
-    cursor = None
+    lista = procurar_BancoDados(email)
+    if not lista or not verifica_cliente(lista, email, senha):
+        return False
+
+    conexao = conectar_banco()
+    cursor = conexao.cursor()
     try:
-        # Conecta ao banco de dados
-        conexao = pymysql.connect(
-            host='localhost',
-            user='root',
-            passwd='',
-            database='cadastro'
-        )
-        
-        lista = procurar_BancoDados(email)
-
-        # Verifica se o cliente existe e se a senha está correta
-        if not lista or not verifica_cliente(email, senha):
-            return False
-        
-        cursor = conexao.cursor()
-        cursor.execute('DELETE FROM cliente WHERE id = %s', (lista[0],))  # Corrige a tupla para (lista[0],)
-        
-        conexao.commit()  # Confirma a transação
-        return True  # Retorna True após a remoção bem-sucedida
-
+        cursor.execute('DELETE FROM cliente WHERE id = %s', (lista[0],))
+        conexao.commit()
+        sucesso = True
     except Exception as e:
-        print("Erro ao remover dados:", e)
-        return False  # Retorna False em caso de erro
-
+        print(f"Erro ao remover o cliente: {e}")
+        sucesso = False
     finally:
-        # Fecha o cursor e a conexão se foram criados
-        if cursor:
-            cursor.close()  
-        if conexao:
-            conexao.close()  
+        cursor.close()
+        conexao.close()
+    return sucesso
 
+    
 def alterar_senha_BancoDados(email: str, senha_antiga: str, senha_nova: str) -> bool:
     try:
+        lista = procurar_BancoDados(email)
         conexao = pymysql.connect(
             host='localhost',
             user='root',
@@ -96,7 +84,7 @@ def alterar_senha_BancoDados(email: str, senha_antiga: str, senha_nova: str) -> 
         cursor = conexao.cursor()
 
         
-        if verifica_cliente(procurar_BancoDados(email, senha_antiga), email, senha_antiga):
+        if verifica_cliente(lista, email, senha_antiga):
             cursor.execute("UPDATE cliente SET senha = %s WHERE email = %s", (senha_nova, email))
             conexao.commit()  
             return True
@@ -114,6 +102,8 @@ def alterar_senha_BancoDados(email: str, senha_antiga: str, senha_nova: str) -> 
 def alterar_nome_BancoDados(email: str, senha: str, novo_nome: str) -> bool:
     conexao = None
     cursor = None
+    lista = procurar_BancoDados(email)
+
     try:
         conexao = pymysql.connect(
             host='localhost',
@@ -122,8 +112,6 @@ def alterar_nome_BancoDados(email: str, senha: str, novo_nome: str) -> bool:
             database='cadastro'
         )
         cursor = conexao.cursor()
-
-        lista = procurar_BancoDados(email)
 
         if lista and verifica_cliente(lista, email, senha):
             cursor.execute("UPDATE cliente SET nome = %s WHERE email = %s", (novo_nome, email))
@@ -141,6 +129,26 @@ def alterar_nome_BancoDados(email: str, senha: str, novo_nome: str) -> bool:
 
     return False
 
+def alterar_pref_BancoDados(email: str,senha: str, pref_nova: str) -> bool:
+    lista = procurar_BancoDados(email)
+    
+    conexao = pymysql.connect(
+            host='localhost',
+            user='root',
+            passwd='',
+            database='cadastro'
+    )
+
+    cursor = conexao.cursor()
+
+    if lista and verifica_cliente(lista, email, senha):
+        cursor.execute("UPDATE cliente SET preferencia = %s WHERE email = %s", (pref_nova, email))
+        conexao.commit()  
+        return True 
+
+    cursor.close()
+    conexao.close() 
+
 
 def imprimir_BD():
     conexao = pymysql.connect(
@@ -154,10 +162,10 @@ def imprimir_BD():
     cursor.execute("select * from cliente")
     lista = list(cursor.fetchall())
 
-    print("========================================")
+    print("===========================================================================================")
     for i in lista:
         print("(ID:",i[0],") (NOME:",i[1],") (EMAIL:",i[2], ") (SENHA:",i[3],") (PREF:",i[4],")")
-    print("========================================")
+    print("===========================================================================================")
 
     cursor.close()
     conexao.close()
